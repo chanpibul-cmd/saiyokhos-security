@@ -76,10 +76,15 @@
             </div>
 
             <div class="form-group">
-                <label>สถานที่เกิดเหตุ (เลือกได้หลายที่):</label>
-                <div class="location-grid" id="locationGrid"></div>
-                <input type="hidden" name="locations" id="locations_hidden">
-            </div>
+    <label>สถานที่เกิดเหตุ (เลือกได้หลายที่):</label>
+    <div class="location-grid" id="locationGrid"></div>
+    <input type="hidden" name="locations" id="locations_hidden">
+</div>
+
+<div class="form-group" id="otherLocationGroup" style="display: none; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;">
+    <label>ระบุสถานที่อื่นๆ :</label>
+    <input type="text" name="otherLocation" id="otherLocationInput" placeholder="พิมพ์ชื่อสถานที่ที่นี่...">
+</div>
 
             <div class="form-group">
                 <label>รายละเอียดเหตุการณ์:</label>
@@ -142,11 +147,38 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycby3lmaUEvuI5MBueMqda5dZM8d7IaGQMEVEoRCdrQD7y0nT2SHoe8VpDRkawW5-aNLb/exec';
     
     // ตั้งค่ารายชื่อสถานที่
-    const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
-    const grid = document.getElementById('locationGrid');
-    locations.forEach(loc => {
-        grid.innerHTML += `<div class="location-item"><input type="checkbox" name="loc_chk" value="${loc}"> ${loc}</div>`;
+// รายชื่อสถานที่ (เหมือนเดิม)
+const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
+
+const grid = document.getElementById('locationGrid');
+const otherGroup = document.getElementById('otherLocationGroup');
+const otherInput = document.getElementById('otherLocationInput');
+
+// สร้างรายการสถานที่พร้อมเพิ่ม Event Listener
+locations.forEach(loc => {
+    const item = document.createElement('div');
+    item.className = 'location-item';
+    item.innerHTML = `<input type="checkbox" name="loc_chk" value="${loc}"> ${loc}`;
+    
+    // ดักจับการคลิกที่ checkbox
+    item.querySelector('input').addEventListener('change', function() {
+        if (this.value === 'อื่นๆ') {
+            if (this.checked) {
+                otherGroup.style.display = 'block';
+                otherInput.required = true; // บังคับให้กรอกถ้าติ๊ก "อื่นๆ"
+                otherInput.focus();
+            } else {
+                otherGroup.style.display = 'none';
+                otherInput.required = false;
+                otherInput.value = ''; // ล้างค่าเมื่อเอาติ๊กออก
+            }
+        }
     });
+    grid.appendChild(item);
+});
+
+// ส่วนของการส่งข้อมูล (IncidentForm Submit) ให้ใช้ของเดิมที่เคยมีได้เลย 
+// เพราะในโค้ดเดิมเรามีการใช้ FormData(e.target) ซึ่งจะดึงค่าจาก name="otherLocation" ไปให้ Apps Script โดยอัตโนมัติอยู่แล้วครับ
 
     // เซ็ตวันที่ปัจจุบันเป็นค่าเริ่มต้นในฟอร์ม
     const today = new Date().toISOString().split('T')[0];
