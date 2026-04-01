@@ -75,8 +75,12 @@
                 </select>
             </div>
 
-            <div class="form-group">
-    <label>สถานที่เกิดเหตุ (เลือกได้หลายที่):</label>
+<div class="form-group">
+    <label>สถานที่เกิดเหตุ:</label>
+    <button type="button" id="selectAllBtn" style="margin-bottom: 10px; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+        ✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)
+    </button>
+    
     <div class="location-grid" id="locationGrid"></div>
     <input type="hidden" name="locations" id="locations_hidden">
 </div>
@@ -151,30 +155,55 @@
 const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
 
 const grid = document.getElementById('locationGrid');
+const selectAllBtn = document.getElementById('selectAllBtn');
 const otherGroup = document.getElementById('otherLocationGroup');
 const otherInput = document.getElementById('otherLocationInput');
 
-// สร้างรายการสถานที่พร้อมเพิ่ม Event Listener
+// 1. สร้างรายการสถานที่ (เหมือนเดิม)
 locations.forEach(loc => {
     const item = document.createElement('div');
     item.className = 'location-item';
     item.innerHTML = `<input type="checkbox" name="loc_chk" value="${loc}"> ${loc}`;
     
-    // ดักจับการคลิกที่ checkbox
+    // ดักจับการคลิกที่ checkbox "อื่นๆ" เพื่อแสดงช่องกรอกเพิ่ม
     item.querySelector('input').addEventListener('change', function() {
         if (this.value === 'อื่นๆ') {
-            if (this.checked) {
-                otherGroup.style.display = 'block';
-                otherInput.required = true; // บังคับให้กรอกถ้าติ๊ก "อื่นๆ"
-                otherInput.focus();
-            } else {
-                otherGroup.style.display = 'none';
-                otherInput.required = false;
-                otherInput.value = ''; // ล้างค่าเมื่อเอาติ๊กออก
-            }
+            handleOtherDisplay(this.checked);
         }
     });
     grid.appendChild(item);
+});
+
+// 2. ฟังก์ชันจัดการการแสดงผลช่อง "อื่นๆ"
+function handleOtherDisplay(isCharts) {
+    if (isCharts) {
+        otherGroup.style.display = 'block';
+        otherInput.required = true;
+    } else {
+        otherGroup.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+    }
+}
+
+// 3. ฟังก์ชันสำหรับปุ่ม "เลือกทั้งหมด"
+let isAllSelected = false; // สถานะตัวแปรเพื่อสลับการเลือก/ไม่เลือก
+selectAllBtn.addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('input[name="loc_chk"]');
+    isAllSelected = !isAllSelected; // สลับสถานะ
+
+    checkboxes.forEach(cb => {
+        if (cb.value !== 'อื่นๆ') {
+            cb.checked = isAllSelected;
+        } else {
+            // กรณีปุ่ม "เลือกทั้งหมด" จะต้องไม่ติ๊ก "อื่นๆ" เสมอตามโจทย์
+            cb.checked = false;
+            handleOtherDisplay(false);
+        }
+    });
+
+    // เปลี่ยนข้อความบนปุ่มตามสถานะ
+    this.innerText = isAllSelected ? "❌ ไม่เลือกทั้งหมด" : "✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)";
 });
 
 // ส่วนของการส่งข้อมูล (IncidentForm Submit) ให้ใช้ของเดิมที่เคยมีได้เลย 
