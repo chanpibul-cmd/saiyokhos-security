@@ -7,31 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .tab { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; overflow-x: auto; }
-        .tab button { flex: 1; padding: 12px; cursor: pointer; border: none; background: none; font-size: 16px; white-space: nowrap; }
+        .tab button { flex: 1; padding: 10px; cursor: pointer; border: none; background: none; font-size: 15px; white-space: nowrap; }
         .tab button.active { border-bottom: 3px solid #007bff; color: #007bff; font-weight: bold; }
         
-        /* ฟอร์มและปุ่ม */
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
         .location-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
         .location-item { display: flex; align-items: center; font-size: 14px; }
         .location-item input { width: auto; margin-right: 8px; }
-        button.btn-submit { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-size: 18px; cursor: pointer; }
+        button.btn-submit { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-size: 16px; cursor: pointer; }
         
-        /* การแสดงผล */
-        #supervisorSection, #dashboardSection { display: none; }
-        .log-card { border-left: 5px solid #007bff; background: #f1f8ff; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        /* สไตล์สำหรับกล่อง Report และ Supervisor */
+        #supervisorSection, #dashboardSection, #reportSection { display: none; }
+        .group-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .group-header { background: #007bff; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between;}
+        .group-header.acked { background: #28a745; }
+        .event-item { border-left: 3px solid #ffc107; padding-left: 10px; margin-bottom: 10px; font-size: 14px; }
+        .sup-form-box { background: #f1f8ff; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px dashed #007bff; }
+        .sup-status { background: #e9ecef; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
         
-        /* CSS สำหรับ Dashboard */
+        /* Dashboard */
         .dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
-        .dash-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .dash-card h4 { margin: 0 0 10px 0; color: #555; font-size: 16px; }
+        .dash-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
         .dash-number { font-size: 32px; font-weight: bold; color: #007bff; }
-        .dash-total { grid-column: span 2; background: #e9ecef; border-color: #ced4da; }
-        .dash-total .dash-number { color: #28a745; font-size: 40px; }
+        .dash-total { grid-column: span 2; background: #e9ecef; }
     </style>
 </head>
 <body>
@@ -40,13 +42,13 @@
     <div class="tab">
         <button id="btnGuard" class="active" onclick="showTab('guard')">📝 บันทึก</button>
         <button id="btnDash" onclick="showTab('dash')">📊 แดชบอร์ด</button>
+        <button id="btnReport" onclick="showTab('report')">📑 รายงาน</button>
         <button id="btnSup" onclick="showTab('sup')">👑 หัวหน้างาน</button>
     </div>
 
     <div id="guardSection">
         <form id="incidentForm">
             <input type="hidden" name="action" value="addLog">
-            
             <div class="form-group">
                 <label>ชื่อ-นามสกุล รปภ. :</label>
                 <select name="guardName" required>
@@ -57,7 +59,6 @@
                     <option value="นายมนต์ชัย ดาเปรม">นายมนต์ชัย ดาเปรม</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>วันที่และเวลา:</label>
                 <div style="display: flex; gap: 10px;">
@@ -65,7 +66,6 @@
                     <input type="time" name="time" id="inputTime" required>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>เวรปฏิบัติงาน:</label>
                 <select name="shift" id="inputShift" required>
@@ -74,221 +74,249 @@
                     <option value="เวรดึก">เวรดึก (00:00 - 08:00)</option>
                 </select>
             </div>
-
-<div class="form-group">
-    <label>สถานที่เกิดเหตุ:</label>
-    <button type="button" id="selectAllBtn" style="margin-bottom: 10px; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
-        ✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)
-    </button>
-    
-    <div class="location-grid" id="locationGrid"></div>
-    <input type="hidden" name="locations" id="locations_hidden">
-</div>
-
-<div class="form-group" id="otherLocationGroup" style="display: none; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;">
-    <label>ระบุสถานที่อื่นๆ :</label>
-    <input type="text" name="otherLocation" id="otherLocationInput" placeholder="พิมพ์ชื่อสถานที่ที่นี่...">
-</div>
-
+            <div class="form-group">
+                <label>สถานที่เกิดเหตุ:</label>
+                <button type="button" id="selectAllBtn" style="margin-bottom: 10px; padding: 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)</button>
+                <div class="location-grid" id="locationGrid"></div>
+                <input type="hidden" name="locations" id="locations_hidden">
+            </div>
+            <div class="form-group" id="otherLocationGroup" style="display: none; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                <label>ระบุสถานที่อื่นๆ :</label>
+                <input type="text" name="otherLocation" id="otherLocationInput" placeholder="พิมพ์ชื่อสถานที่...">
+            </div>
             <div class="form-group">
                 <label>รายละเอียดเหตุการณ์:</label>
-                <textarea name="incidentDetail" rows="4" placeholder="ระบุเหตุการณ์สำคัญที่เกิดขึ้น..." required></textarea>
+                <textarea name="incidentDetail" rows="3" placeholder="ระบุเหตุการณ์สำคัญที่เกิดขึ้น..." required></textarea>
             </div>
-
             <button type="submit" class="btn-submit" id="saveBtn">💾 บันทึกข้อมูล</button>
         </form>
     </div>
 
     <div id="dashboardSection">
-        <h3 style="text-align: center; margin-bottom: 5px;">สรุปเหตุการณ์ประจำวัน</h3>
-        <p style="text-align: center; margin-top: 0; color: #666;" id="dashDateShow">กำลังโหลดข้อมูล...</p>
-        
+        <h3 style="text-align: center;">สรุปเหตุการณ์ประจำวัน</h3>
+        <p style="text-align: center; color: #666;" id="dashDateShow">กำลังโหลด...</p>
         <div class="dash-grid">
-            <div class="dash-card dash-total">
-                <h4>รวมเหตุการณ์ทั้งหมด (วันนี้)</h4>
-                <div class="dash-number" id="dashTotal">0</div>
-            </div>
-            <div class="dash-card">
-                <h4>เวรเช้า</h4>
-                <div class="dash-number" id="dashMorn">0</div>
-            </div>
-            <div class="dash-card">
-                <h4>เวรบ่าย</h4>
-                <div class="dash-number" id="dashAft">0</div>
-            </div>
-            <div class="dash-card">
-                <h4>เวรดึก</h4>
-                <div class="dash-number" id="dashNight">0</div>
-            </div>
+            <div class="dash-card dash-total"><h4>รวมทั้งหมด (วันนี้)</h4><div class="dash-number" id="dashTotal">0</div></div>
+            <div class="dash-card"><h4>เวรเช้า</h4><div class="dash-number" id="dashMorn">0</div></div>
+            <div class="dash-card"><h4>เวรบ่าย</h4><div class="dash-number" id="dashAft">0</div></div>
+            <div class="dash-card"><h4>เวรดึก</h4><div class="dash-number" id="dashNight">0</div></div>
         </div>
-        <button onclick="loadDashboard()" class="btn-submit" style="margin-top:20px; font-size:16px; background-color:#17a2b8;">🔄 รีเฟรชข้อมูลล่าสุด</button>
+        <button onclick="fetchAllData()" class="btn-submit" style="margin-top:15px; background-color:#17a2b8;">🔄 รีเฟรชข้อมูล</button>
+    </div>
+
+    <div id="reportSection">
+        <h3>📑 รายงานเหตุการณ์ (แยกตามเวร)</h3>
+        <button onclick="fetchAllData()" class="btn-submit" style="margin-bottom:15px; background-color:#6c757d; padding:8px;">🔄 อัปเดตรายงานล่าสุด</button>
+        <div id="reportDisplay">กำลังดึงข้อมูล...</div>
     </div>
 
     <div id="supervisorSection">
         <div id="loginArea">
-            <label>รหัสผ่านเข้าสู่ระบบหัวหน้า (PIN):</label>
+            <label>รหัสผ่านเข้าสู่ระบบหัวหน้า:</label>
             <input type="password" id="supPass" placeholder="รหัส 5 หลัก">
             <button onclick="checkPass()" style="margin-top:10px;" class="btn-submit">ยืนยัน</button>
         </div>
-        
         <div id="contentArea" style="display:none;">
-            <h3>📋 รายการ 5 ล่าสุดที่รอการรับทราบ</h3>
-            <div id="logsDisplay">กำลังโหลด...</div>
-            <hr>
-            <h4>บันทึกสั่งการ / รับทราบ</h4>
-            <form id="supForm">
-                <input type="hidden" name="action" value="supervisorAction">
-                <input type="text" name="supName" placeholder="ชื่อหัวหน้างาน" required style="margin-bottom:10px;">
-                <textarea name="supAction" rows="3" placeholder="วิธีแก้ไขปัญหา หรือ ข้อสั่งการ..." required></textarea>
-                <button type="submit" class="btn-submit" style="background-color:#007bff; margin-top:10px;">✅ บันทึกรับทราบ</button>
-            </form>
+            <h3>👑 รายการเวร "รอการรับทราบ"</h3>
+            <button onclick="fetchAllData()" class="btn-submit" style="margin-bottom:15px; background-color:#6c757d; padding:8px;">🔄 รีเฟรช</button>
+            <div id="supDisplay">กำลังดึงข้อมูล...</div>
         </div>
     </div>
 </div>
 
 <script>
-    // *** อย่าลืมวาง URL จาก Google Apps Script ตรงนี้ ***
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbytyC9VHL4DAue96yRL0crocmVf5BOiCnSSgpLA2qESsrHMP1jAlbgGUQ6Kz1CghoNC/exec';
+    // *** วาง URL WEB APP ของคุณตรงนี้ ***
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwmVk-hhqewhxPpokrDTkAWjxlrG2OtzEV02abbFHceZYbQFQAC1r3Mz1o95nRA-H1H/exec';
+
+    // จัดการสถานที่
+    const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
+    const grid = document.getElementById('locationGrid');
+    const otherGroup = document.getElementById('otherLocationGroup');
+    const otherInput = document.getElementById('otherLocationInput');
     
-    // ตั้งค่ารายชื่อสถานที่
-// รายชื่อสถานที่ (เหมือนเดิม)
-const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
-
-const grid = document.getElementById('locationGrid');
-const selectAllBtn = document.getElementById('selectAllBtn');
-const otherGroup = document.getElementById('otherLocationGroup');
-const otherInput = document.getElementById('otherLocationInput');
-
-// 1. สร้างรายการสถานที่ (เหมือนเดิม)
-locations.forEach(loc => {
-    const item = document.createElement('div');
-    item.className = 'location-item';
-    item.innerHTML = `<input type="checkbox" name="loc_chk" value="${loc}"> ${loc}`;
-    
-    // ดักจับการคลิกที่ checkbox "อื่นๆ" เพื่อแสดงช่องกรอกเพิ่ม
-    item.querySelector('input').addEventListener('change', function() {
-        if (this.value === 'อื่นๆ') {
-            handleOtherDisplay(this.checked);
-        }
-    });
-    grid.appendChild(item);
-});
-
-// 2. ฟังก์ชันจัดการการแสดงผลช่อง "อื่นๆ"
-function handleOtherDisplay(isCharts) {
-    if (isCharts) {
-        otherGroup.style.display = 'block';
-        otherInput.required = true;
-    } else {
-        otherGroup.style.display = 'none';
-        otherInput.required = false;
-        otherInput.value = '';
-    }
-}
-
-// 3. ฟังก์ชันสำหรับปุ่ม "เลือกทั้งหมด"
-let isAllSelected = false; // สถานะตัวแปรเพื่อสลับการเลือก/ไม่เลือก
-selectAllBtn.addEventListener('click', function() {
-    const checkboxes = document.querySelectorAll('input[name="loc_chk"]');
-    isAllSelected = !isAllSelected; // สลับสถานะ
-
-    checkboxes.forEach(cb => {
-        if (cb.value !== 'อื่นๆ') {
-            cb.checked = isAllSelected;
-        } else {
-            // กรณีปุ่ม "เลือกทั้งหมด" จะต้องไม่ติ๊ก "อื่นๆ" เสมอตามโจทย์
-            cb.checked = false;
-            handleOtherDisplay(false);
-        }
+    locations.forEach(loc => {
+        const item = document.createElement('div');
+        item.className = 'location-item';
+        item.innerHTML = `<input type="checkbox" name="loc_chk" value="${loc}"> ${loc}`;
+        item.querySelector('input').addEventListener('change', function() {
+            if (this.value === 'อื่นๆ') {
+                otherGroup.style.display = this.checked ? 'block' : 'none';
+                otherInput.required = this.checked;
+                if(!this.checked) otherInput.value = '';
+            }
+        });
+        grid.appendChild(item);
     });
 
-    // เปลี่ยนข้อความบนปุ่มตามสถานะ
-    this.innerText = isAllSelected ? "❌ ไม่เลือกทั้งหมด" : "✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)";
-});
+    let isAllSelected = false;
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        isAllSelected = !isAllSelected;
+        document.querySelectorAll('input[name="loc_chk"]').forEach(cb => {
+            if (cb.value !== 'อื่นๆ') { cb.checked = isAllSelected; } 
+            else { cb.checked = false; otherGroup.style.display = 'none'; otherInput.required = false; }
+        });
+        this.innerText = isAllSelected ? "❌ ไม่เลือกทั้งหมด" : "✅ เลือกทั้งหมด (ยกเว้นอื่นๆ)";
+    });
 
-// ส่วนของการส่งข้อมูล (IncidentForm Submit) ให้ใช้ของเดิมที่เคยมีได้เลย 
-// เพราะในโค้ดเดิมเรามีการใช้ FormData(e.target) ซึ่งจะดึงค่าจาก name="otherLocation" ไปให้ Apps Script โดยอัตโนมัติอยู่แล้วครับ
-
-    // เซ็ตวันที่ปัจจุบันเป็นค่าเริ่มต้นในฟอร์ม
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('inputDate').value = today;
 
-    // ระบบสลับหน้าต่าง (Tabs)
+    // ระบบสลับแท็บ
     function showTab(type) {
-        document.getElementById('guardSection').style.display = type === 'guard' ? 'block' : 'none';
-        document.getElementById('dashboardSection').style.display = type === 'dash' ? 'block' : 'none';
-        document.getElementById('supervisorSection').style.display = type === 'sup' ? 'block' : 'none';
-        
-        document.getElementById('btnGuard').className = type === 'guard' ? 'active' : '';
-        document.getElementById('btnDash').className = type === 'dash' ? 'active' : '';
-        document.getElementById('btnSup').className = type === 'sup' ? 'active' : '';
-
-        // ถ้ากดเข้าหน้า Dashbord ให้โหลดข้อมูลทันที
-        if(type === 'dash') loadDashboard();
-    }
-
-    // โหลดข้อมูล Dashboard สรุปรายวันและรายเวร
-    function loadDashboard() {
-        document.getElementById('dashDateShow').innerText = "กำลังดึงข้อมูลวันที่ " + today + " ...";
-        
-        fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-            let countTotal = 0, countMorn = 0, countAft = 0, countNight = 0;
-            
-            // วนลูปเช็คข้อมูลทีละแถว
-            data.forEach(row => {
-                let rowDate = row[1]; // คอลัมน์วันที่ (อิงตาม Index)
-                let rowShift = row[3]; // คอลัมน์เวร
-
-                // ถ้าวันที่ในตาราง ตรงกับวันที่วันนี้
-                if(rowDate && rowDate.includes(today)) {
-                    countTotal++;
-                    if(rowShift === "เวรเช้า") countMorn++;
-                    else if(rowShift === "เวรบ่าย") countAft++;
-                    else if(rowShift === "เวรดึก") countNight++;
-                }
-            });
-
-            // แสดงผลตัวเลข
-            document.getElementById('dashTotal').innerText = countTotal;
-            document.getElementById('dashMorn').innerText = countMorn;
-            document.getElementById('dashAft').innerText = countAft;
-            document.getElementById('dashNight').innerText = countNight;
-            document.getElementById('dashDateShow').innerText = "ข้อมูลประจำวันที่: " + today;
-        })
-        .catch(err => {
-            document.getElementById('dashDateShow').innerText = "โหลดข้อมูลล้มเหลว กรุณาลองใหม่";
+        ['guard', 'dash', 'report', 'sup'].forEach(t => {
+            document.getElementById(t + 'Section').style.display = type === t ? 'block' : 'none';
+            document.getElementById('btn' + t.charAt(0).toUpperCase() + t.slice(1)).className = type === t ? 'active' : '';
         });
+        if(type === 'dash' || type === 'report') fetchAllData();
     }
 
-    // ระบบรหัสผ่านหัวหน้า
     function checkPass() {
         if(document.getElementById('supPass').value === "11278") {
             document.getElementById('loginArea').style.display = 'none';
             document.getElementById('contentArea').style.display = 'block';
-            fetchLogs();
-        } else {
-            alert("รหัสผ่านไม่ถูกต้อง!");
-        }
+            fetchAllData();
+        } else { alert("รหัสผ่านไม่ถูกต้อง!"); }
     }
 
-    // ดึงรายการให้หัวหน้าดู
-    function fetchLogs() {
-        fetch(scriptURL).then(res => res.json()).then(data => {
-            let html = "";
-            data.slice(-5).reverse().forEach(row => { 
-                html += `<div class="log-card">
-                    <b>${row[4]}</b> (${row[3]}) | 📅 ${row[1]}<br>
-                    📍 ${row[5]}<br>
-                    📝 ${row[7]}
-                </div>`;
+    // ฟังก์ชันหลักที่ดึงและ "จัดกลุ่มข้อมูล (Group By)"
+    let globalData = {}; 
+    function fetchAllData() {
+        document.getElementById('dashDateShow').innerText = "กำลังคำนวณ...";
+        document.getElementById('reportDisplay').innerHTML = "กำลังประมวลผลข้อมูล...";
+        document.getElementById('supDisplay').innerHTML = "กำลังประมวลผลข้อมูล...";
+
+        fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+            // 1. อัปเดต Dashboard
+            let cTotal = 0, cMorn = 0, cAft = 0, cNight = 0;
+            let grouped = {};
+
+            // 2. จัดกลุ่มเหตุการณ์เข้าด้วยกัน (Key = วันที่ + เวร)
+            data.logs.forEach(row => {
+                if(!row[0]) return; // ข้ามแถวว่าง
+                let date = row[1];
+                let shift = row[3];
+                let key = date + "_" + shift;
+
+                // สำหรับ Dashboard นับเฉพาะเหตุการณ์วันนี้
+                if(date === today) {
+                    cTotal++;
+                    if(shift === "เวรเช้า") cMorn++;
+                    else if(shift === "เวรบ่าย") cAft++;
+                    else if(shift === "เวรดึก") cNight++;
+                }
+
+                // สร้างกลุ่มถ้าย้อนยังไม่มี
+                if(!grouped[key]) {
+                    grouped[key] = { date: date, shift: shift, events: [], isAck: false, supName: "", supAction: "" };
+                }
+                grouped[key].events.push(row);
             });
-            document.getElementById('logsDisplay').innerHTML = html;
+
+            // 3. ตรวจสอบว่ากลุ่มไหน หัวหน้ารับทราบแล้ว (เอาข้อมูลจาก Shift_Summaries มาเทียบ)
+            data.summaries.forEach(row => {
+                if(!row[0]) return;
+                let key = row[1] + "_" + row[2]; // วันที่_เวร
+                if(grouped[key]) {
+                    grouped[key].isAck = true;
+                    grouped[key].supName = row[3];
+                    grouped[key].supAction = row[4];
+                }
+            });
+
+            // แสดงตัวเลข Dashboard
+            document.getElementById('dashTotal').innerText = cTotal;
+            document.getElementById('dashMorn').innerText = cMorn;
+            document.getElementById('dashAft').innerText = cAft;
+            document.getElementById('dashNight').innerText = cNight;
+            document.getElementById('dashDateShow').innerText = "ข้อมูลประจำวันที่: " + today;
+
+            // 4. สร้างหน้าตา "รายงาน" และ "หัวหน้า"
+            renderUI(grouped);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("ดึงข้อมูลล้มเหลว โปรดตรวจสอบการ Deploy หรือ อินเทอร์เน็ต");
         });
     }
 
-    // จัดการส่งข้อมูลฟอร์ม
+    // ฟังก์ชันสร้างหน้าตา HTML จากข้อมูลที่จัดกลุ่มแล้ว
+    function renderUI(grouped) {
+        let reportHTML = "";
+        let supHTML = "";
+        
+        // แปลง Object ให้เป็น Array แล้วเรียงวันที่ล่าสุดขึ้นก่อน
+        let groupsArray = Object.values(grouped).sort((a,b) => b.date.localeCompare(a.date));
+
+        groupsArray.forEach(group => {
+            // สร้างรายการเหตุการณ์ย่อยด้านใน
+            let eventsList = "";
+            group.events.forEach(ev => {
+                let loc = ev[6] ? `${ev[5]} (${ev[6]})` : ev[5]; // จัดการ "อื่นๆ"
+                eventsList += `<div class="event-item">
+                    <b>เวลา ${ev[2]} น.</b> (บันทึกโดย: ${ev[4]})<br>
+                    📍 สถานที่: ${loc}<br>
+                    📝 รายละเอียด: ${ev[7]}
+                </div>`;
+            });
+
+            // --- ส่วนของ หน้ารายงาน (โชว์ทุกอย่าง) ---
+            let statusBadge = group.isAck ? `✅ หัวหน้ารับทราบแล้ว` : `⏳ รอหัวหน้ารับทราบ`;
+            let headerClass = group.isAck ? "group-header acked" : "group-header";
+            
+            reportHTML += `<div class="group-card">
+                <div class="${headerClass}">
+                    <span>📅 ${group.date} | ${group.shift}</span>
+                    <span>${statusBadge}</span>
+                </div>
+                <div><b>สรุปเหตุการณ์ทั้งหมดในเวร: ${group.events.length} รายการ</b></div><hr>
+                ${eventsList}
+                ${group.isAck ? `<div class="sup-status"><b>หัวหน้าสั่งการ (${group.supName}):</b> ${group.supAction}</div>` : ''}
+            </div>`;
+
+            // --- ส่วนของ หน้าหัวหน้า (โชว์เฉพาะที่ยังไม่ได้รับทราบ) ---
+            if(!group.isAck) {
+                supHTML += `<div class="group-card">
+                    <div class="group-header">
+                        <span>📅 ${group.date} | ${group.shift}</span>
+                        <span>รายการ: ${group.events.length}</span>
+                    </div>
+                    ${eventsList}
+                    <div class="sup-form-box">
+                        <form onsubmit="submitSupForm(event)">
+                            <input type="hidden" name="action" value="supervisorAction">
+                            <input type="hidden" name="summaryDate" value="${group.date}">
+                            <input type="hidden" name="shiftRef" value="${group.shift}">
+                            <input type="text" name="supName" placeholder="ชื่อหัวหน้างานที่ตรวจรับ" required style="margin-bottom:8px;">
+                            <textarea name="supAction" rows="2" placeholder="วิธีแก้ไขปัญหา หรือ รับทราบ" required></textarea>
+                            <button type="submit" class="btn-submit" style="background:#007bff; margin-top:8px;">✅ ยืนยันรับทราบเวรนี้</button>
+                        </form>
+                    </div>
+                </div>`;
+            }
+        });
+
+        document.getElementById('reportDisplay').innerHTML = reportHTML || "<p>ยังไม่มีข้อมูลบันทึก</p>";
+        document.getElementById('supDisplay').innerHTML = supHTML || "<h4 style='color:green;'>🎉 ไม่มีเวรค้างรับทราบ! ทุกเวรถูกตรวจสอบหมดแล้ว</h4>";
+    }
+
+    // ฟังก์ชันส่งข้อมูลหัวหน้า (แยกรายเวร)
+    function submitSupForm(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.innerText = "กำลังบันทึก...";
+        btn.disabled = true;
+
+        fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
+        .then(() => { 
+            alert('บันทึกรับทราบเวรสำเร็จ!'); 
+            fetchAllData(); // รีเฟรชข้อมูลใหม่ทันที
+        })
+        .catch(() => { alert("เกิดข้อผิดพลาด"); btn.innerText = "✅ ยืนยันรับทราบเวรนี้"; btn.disabled = false; });
+    }
+
+    // บันทึกฟอร์ม รปภ.
     document.getElementById('incidentForm').addEventListener('submit', e => {
         e.preventDefault();
         let selected = [];
@@ -298,67 +326,13 @@ selectAllBtn.addEventListener('click', function() {
         document.getElementById('saveBtn').innerText = "กำลังบันทึก...";
         fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
         .then(() => { 
-            alert('บันทึกสำเร็จ!'); 
+            alert('บันทึกเหตุการณ์สำเร็จ!'); 
             e.target.reset(); 
-            document.getElementById('inputDate').value = today; // เซ็ตวันที่กลับมาเป็นวันนี้
+            document.getElementById('inputDate').value = today;
             document.getElementById('saveBtn').innerText = "💾 บันทึกข้อมูล";
+            document.getElementById('otherLocationGroup').style.display = 'none';
         });
     });
-
-    // ----------------------------------------------------
-    // โค้ดสำหรับจัดการฟอร์มหัวหน้างาน (ที่เพิ่มใหม่)
-    // ----------------------------------------------------
-    document.getElementById('supForm').addEventListener('submit', e => {
-        e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรช
-        const supBtn = e.target.querySelector('button');
-        supBtn.innerText = "กำลังบันทึก...";
-        supBtn.disabled = true;
-
-        // ส่งข้อมูลไปยัง Google Apps Script
-        fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
-        .then(() => { 
-            alert('หัวหน้างานบันทึกรับทราบสำเร็จ!'); 
-            e.target.reset(); // ล้างฟอร์ม
-            supBtn.innerText = "✅ บันทึกรับทราบ";
-            supBtn.disabled = false;
-        })
-        .catch(err => {
-            alert('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่');
-            supBtn.innerText = "✅ บันทึกรับทราบ";
-            supBtn.disabled = false;
-        });
-    });
-
-    // ----------------------------------------------------
-    // ปรับปรุงฟังก์ชันโหลดข้อมูลให้เสถียรขึ้น และมีข้อความแจ้งเตือน
-    // ----------------------------------------------------
-    function fetchLogs() {
-        document.getElementById('logsDisplay').innerHTML = "กำลังดึงข้อมูลจากฐานข้อมูล...";
-        fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-            let html = "";
-            if(data.length === 0) {
-                html = "ยังไม่มีข้อมูลเหตุการณ์";
-            } else {
-                // ดึง 5 แถวล่าสุด (ข้ามแถวที่ว่าง)
-                data.slice(-5).reverse().forEach(row => { 
-                    if(row[0]) { // เช็คว่ามี Log_ID ไม่ใช่แถวว่าง
-                        html += `<div class="log-card">
-                            <b>${row[4]}</b> (${row[3]}) | 📅 ${row[1]}<br>
-                            📍 ${row[5]}<br>
-                            📝 ${row[7]}
-                        </div>`;
-                    }
-                });
-            }
-            document.getElementById('logsDisplay').innerHTML = html || "ไม่มีข้อมูล";
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('logsDisplay').innerHTML = "<span style='color:red;'>❌ ไม่สามารถโหลดข้อมูลได้ (โปรดตรวจสอบการ Deploy Apps Script)</span>";
-        });
-    }
 </script>
 
 </body>
