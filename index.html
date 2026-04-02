@@ -20,8 +20,8 @@
         .location-item input { width: auto; margin-right: 8px; }
         button.btn-submit { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-size: 16px; cursor: pointer; }
         
-        /* สไตล์สำหรับกล่อง Report และ Supervisor */
-        #supervisorSection, #dashboardSection, #reportSection { display: none; }
+        /* แก้ไขชื่อ ID ตรงนี้ให้ตรงกับ JavaScript */
+        #supSection, #dashSection, #reportSection { display: none; }
         .group-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .group-header { background: #007bff; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between;}
         .group-header.acked { background: #28a745; }
@@ -92,7 +92,7 @@
         </form>
     </div>
 
-    <div id="dashboardSection">
+    <div id="dashSection">
         <h3 style="text-align: center;">สรุปเหตุการณ์ประจำวัน</h3>
         <p style="text-align: center; color: #666;" id="dashDateShow">กำลังโหลด...</p>
         <div class="dash-grid">
@@ -110,7 +110,7 @@
         <div id="reportDisplay">กำลังดึงข้อมูล...</div>
     </div>
 
-    <div id="supervisorSection">
+    <div id="supSection">
         <div id="loginArea">
             <label>รหัสผ่านเข้าสู่ระบบหัวหน้า:</label>
             <input type="password" id="supPass" placeholder="รหัส 5 หลัก">
@@ -167,7 +167,7 @@
             document.getElementById(t + 'Section').style.display = type === t ? 'block' : 'none';
             document.getElementById('btn' + t.charAt(0).toUpperCase() + t.slice(1)).className = type === t ? 'active' : '';
         });
-        if(type === 'dash' || type === 'report') fetchAllData();
+        if(type === 'dash' || type === 'report' || type === 'sup') fetchAllData();
     }
 
     function checkPass() {
