@@ -148,7 +148,7 @@
 
 <script>
     // *** อย่าลืมวาง URL จาก Google Apps Script ตรงนี้ ***
-    const scriptURL = 'https://script.google.com/macros/s/AKfycby7ubGzAYfy742QADGjuSqZiVn8HO65x3sAs7Z2eS7MkEwz1uCHAQ5ZWl1h6uWH2nWJ/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbytyC9VHL4DAue96yRL0crocmVf5BOiCnSSgpLA2qESsrHMP1jAlbgGUQ6Kz1CghoNC/exec';
     
     // ตั้งค่ารายชื่อสถานที่
 // รายชื่อสถานที่ (เหมือนเดิม)
@@ -304,6 +304,61 @@ selectAllBtn.addEventListener('click', function() {
             document.getElementById('saveBtn').innerText = "💾 บันทึกข้อมูล";
         });
     });
+
+    // ----------------------------------------------------
+    // โค้ดสำหรับจัดการฟอร์มหัวหน้างาน (ที่เพิ่มใหม่)
+    // ----------------------------------------------------
+    document.getElementById('supForm').addEventListener('submit', e => {
+        e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรช
+        const supBtn = e.target.querySelector('button');
+        supBtn.innerText = "กำลังบันทึก...";
+        supBtn.disabled = true;
+
+        // ส่งข้อมูลไปยัง Google Apps Script
+        fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
+        .then(() => { 
+            alert('หัวหน้างานบันทึกรับทราบสำเร็จ!'); 
+            e.target.reset(); // ล้างฟอร์ม
+            supBtn.innerText = "✅ บันทึกรับทราบ";
+            supBtn.disabled = false;
+        })
+        .catch(err => {
+            alert('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่');
+            supBtn.innerText = "✅ บันทึกรับทราบ";
+            supBtn.disabled = false;
+        });
+    });
+
+    // ----------------------------------------------------
+    // ปรับปรุงฟังก์ชันโหลดข้อมูลให้เสถียรขึ้น และมีข้อความแจ้งเตือน
+    // ----------------------------------------------------
+    function fetchLogs() {
+        document.getElementById('logsDisplay').innerHTML = "กำลังดึงข้อมูลจากฐานข้อมูล...";
+        fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+            if(data.length === 0) {
+                html = "ยังไม่มีข้อมูลเหตุการณ์";
+            } else {
+                // ดึง 5 แถวล่าสุด (ข้ามแถวที่ว่าง)
+                data.slice(-5).reverse().forEach(row => { 
+                    if(row[0]) { // เช็คว่ามี Log_ID ไม่ใช่แถวว่าง
+                        html += `<div class="log-card">
+                            <b>${row[4]}</b> (${row[3]}) | 📅 ${row[1]}<br>
+                            📍 ${row[5]}<br>
+                            📝 ${row[7]}
+                        </div>`;
+                    }
+                });
+            }
+            document.getElementById('logsDisplay').innerHTML = html || "ไม่มีข้อมูล";
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('logsDisplay').innerHTML = "<span style='color:red;'>❌ ไม่สามารถโหลดข้อมูลได้ (โปรดตรวจสอบการ Deploy Apps Script)</span>";
+        });
+    }
 </script>
 
 </body>
