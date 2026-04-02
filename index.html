@@ -88,19 +88,19 @@
 
             <div class="form-group" style="background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #b6d4fe;">
                 <label>สถานะเหตุการณ์:</label>
-                <select name="eventStatus" required style="font-weight:bold;">
+                <select name="eventStatus" id="eventStatus" required style="font-weight:bold;">
                     <option value="ปกติ">🟢 ปกติ</option>
-                    <option value="มีเหตุการณ์">🔴 มีเหตุการณ์</option>
+                    <option value="มีเหตุการณ์">🔴 มีเหตุการณ์ (ต้องระบุรายละเอียด)</option>
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="detailGroup" style="display: none;">
                 <label>รายละเอียดเหตุการณ์:</label>
-                <textarea name="incidentDetail" rows="3" placeholder="ระบุเหตุการณ์สำคัญที่เกิดขึ้น..." required></textarea>
+                <textarea name="incidentDetail" id="incidentDetailInput" rows="3" placeholder="ระบุเหตุการณ์สำคัญที่เกิดขึ้น..."></textarea>
             </div>
 
             <div class="form-group" style="background: #fdf5e6; padding: 15px; border-radius: 8px; border: 1px solid #fbdc9b;">
-                <label>แนบรูปภาพประกอบ (ถ้ามี):</label>
+                <label>📸 ถ่ายรูปภาพ หรือ แนบรูปประกอบ (ถ้ามี):</label>
                 <input type="file" id="imageInput" accept="image/*" capture="environment">
                 <input type="hidden" name="imageBase64" id="imageBase64">
                 <canvas id="canvas" style="display:none;"></canvas>
@@ -145,7 +145,7 @@
 
 <script>
     // *** วาง URL WEB APP ของคุณตรงนี้ ***
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyT2g97CtlsjE63RsEt2H-dGjY7ysxiGAJZ5OfL_SyJXdnZv_79K2dW_uFTAm5ynvvu/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycby5Or53quPcJ8bKpHNT0UilaVhOV75Ynem1OdQBXKiLEm1Z3qnYSyNYikPMWTitMXda/exec';
 
     const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
     const grid = document.getElementById('locationGrid');
@@ -179,6 +179,25 @@
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('inputDate').value = today;
 
+    // --- ระบบซ่อน/แสดง รายละเอียดเหตุการณ์ ---
+    const eventStatus = document.getElementById('eventStatus');
+    const detailGroup = document.getElementById('detailGroup');
+    const incidentDetailInput = document.getElementById('incidentDetailInput');
+
+    eventStatus.addEventListener('change', function() {
+        if (this.value === 'มีเหตุการณ์') {
+            detailGroup.style.display = 'block';
+            incidentDetailInput.required = true;
+            if(incidentDetailInput.value === 'ไม่มีเหตุการณ์ผิดปกติ') incidentDetailInput.value = '';
+        } else {
+            detailGroup.style.display = 'none';
+            incidentDetailInput.required = false;
+            incidentDetailInput.value = 'ไม่มีเหตุการณ์ผิดปกติ'; // พิมพ์อัตโนมัติให้ส่งไปที่ฐานข้อมูล
+        }
+    });
+    // เรียกให้ทำงานครั้งแรกตอนโหลดหน้าเว็บ
+    eventStatus.dispatchEvent(new Event('change'));
+
     function showTab(type) {
         ['guard', 'dash', 'report', 'sup'].forEach(t => {
             document.getElementById(t + 'Section').style.display = type === t ? 'block' : 'none';
@@ -195,9 +214,7 @@
         } else { alert("รหัสผ่านไม่ถูกต้อง!"); }
     }
 
-    // ----------------------------------------------------
-    // ระบบย่อรูปภาพด้วย Canvas (ทำงานฝั่งมือถือก่อนส่งข้อมูล)
-    // ----------------------------------------------------
+    // --- ระบบย่อรูปภาพ ---
     document.getElementById('imageInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -207,7 +224,7 @@
             img.onload = function() {
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 800; // กำหนดความกว้างสูงสุด
+                const MAX_WIDTH = 800; 
                 const MAX_HEIGHT = 800;
                 let width = img.width;
                 let height = img.height;
@@ -221,11 +238,9 @@
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // แปลงรูปเป็น Base64 คุณภาพ 70%
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
                 document.getElementById('imageBase64').value = dataUrl;
                 
-                // โชว์รูปตัวอย่าง
                 const preview = document.getElementById('preview');
                 preview.src = dataUrl;
                 preview.style.display = 'block';
@@ -289,15 +304,17 @@
             let eventsList = "";
             group.events.forEach(ev => {
                 let loc = ev[6] ? `${ev[5]} (${ev[6]})` : ev[5];
-                // ดึงค่าตามคอลัมน์ใหม่ (7=สถานะ, 8=รายละเอียด, 9=รูปภาพ)
                 let statusBadge = ev[7] === 'ปกติ' ? '<span style="color:green;">🟢 ปกติ</span>' : '<span style="color:red;">🔴 มีเหตุการณ์</span>';
                 let imgLink = (ev[9] && ev[9].includes("http")) ? `<br>📸 <a href="${ev[9]}" target="_blank" style="color:#007bff; text-decoration:underline;">ดูรูปภาพประกอบ</a>` : '';
                 
+                // ถ้ารายละเอียดเป็น "ไม่มีเหตุการณ์ผิดปกติ" เราสามารถข้ามบรรทัดนี้ได้เพื่อความสะอาดตาของรายงาน
+                let detailText = (ev[8] === 'ไม่มีเหตุการณ์ผิดปกติ') ? '' : `<br>📝 รายละเอียด: ${ev[8]}`;
+
                 eventsList += `<div class="event-item">
                     <b>เวลา ${ev[2]} น.</b> (บันทึกโดย: ${ev[4]})<br>
                     📍 สถานที่: ${loc}<br>
-                    ⚠️ สถานะ: <b>${statusBadge}</b><br>
-                    📝 รายละเอียด: ${ev[8]}
+                    ⚠️ สถานะ: <b>${statusBadge}</b>
+                    ${detailText}
                     ${imgLink}
                 </div>`;
             });
@@ -365,10 +382,13 @@
             document.getElementById('inputDate').value = today;
             document.getElementById('saveBtn').innerText = "💾 บันทึกข้อมูล";
             document.getElementById('otherLocationGroup').style.display = 'none';
-            // เคลียร์รูปภาพ
             document.getElementById('imageBase64').value = "";
             document.getElementById('preview').style.display = "none";
             document.getElementById('preview').src = "";
+            
+            // รีเซ็ตสถานะเหตุการณ์กลับไปเป็น "ปกติ"
+            eventStatus.value = 'ปกติ';
+            eventStatus.dispatchEvent(new Event('change'));
         });
     });
 </script>
