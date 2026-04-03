@@ -22,9 +22,13 @@
         button.btn-submit { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-size: 16px; cursor: pointer; }
         
         #supSection, #dashSection, #reportSection { display: none; }
-        .group-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fff; }
-        .group-header { background: #007bff; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between;}
+        .group-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .group-header { background: #007bff; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; transition: background 0.2s;}
+        .group-header:hover { background: #0056b3; }
         .group-header.acked { background: #28a745; }
+        .group-header.acked:hover { background: #218838; }
+        .group-content { padding: 15px; display: none; } /* ซ่อนเนื้อหาเป็นค่าเริ่มต้น */
+        
         .event-item { border-left: 3px solid #ffc107; padding-left: 10px; margin-bottom: 15px; font-size: 14px; background: #fafafa; padding: 10px; border-radius: 0 8px 8px 0;}
         .sup-form-box { background: #f1f8ff; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px dashed #007bff; }
         .sup-status { background: #e9ecef; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
@@ -33,6 +37,14 @@
         .dash-number { font-size: 32px; font-weight: bold; color: #007bff; }
         .dash-total { grid-column: span 2; background: #e9ecef; }
         .img-preview { max-width: 100%; margin-top: 10px; border-radius: 8px; display: none; }
+        
+        /* ปุ่มพิมพ์ และ ระบบแบ่งหน้า */
+        .btn-print { background-color: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; float: right; margin-top: 5px; }
+        .btn-print:hover { background-color: #5a6268; }
+        .pagination { display: flex; justify-content: center; margin-top: 20px; gap: 5px; }
+        .page-btn { padding: 8px 12px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer; }
+        .page-btn.active { background: #007bff; color: white; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -125,14 +137,19 @@
 
     <div id="reportSection">
         <h3>📑 รายงานเหตุการณ์ (แยกตามเวร)</h3>
-        <button onclick="fetchAllData()" class="btn-submit" style="margin-bottom:15px; background-color:#6c757d; padding:8px;">🔄 อัปเดตรายงานล่าสุด</button>
+        <div class="search-box">
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="🔍 ค้นหา: วันที่, ชื่อ, สถานที่..." style="flex: 1;">
+            <button onclick="fetchAllData()" class="btn-submit" style="width: auto; background-color:#6c757d; padding: 10px;">🔄 อัปเดต</button>
+        </div>
+        
         <div id="reportDisplay">กำลังดึงข้อมูล...</div>
+        <div id="paginationControls" class="pagination"></div>
     </div>
 
     <div id="supSection">
         <div id="loginArea">
             <label>รหัสผ่านเข้าสู่ระบบหัวหน้า:</label>
-            <input type="password" id="supPass" placeholder="รหัส 5 หลัก">
+            <input type="password" id="supPass" placeholder="ใส่รหัส">
             <button onclick="checkPass()" style="margin-top:10px;" class="btn-submit">ยืนยัน</button>
         </div>
         <div id="contentArea" style="display:none;">
@@ -147,7 +164,7 @@
     // *** วาง URL WEB APP ของคุณตรงนี้ ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycby61czguWBRbHpQtB2x-N0VAS9dKj1bjQSAz9tKEfEvbgRQJA8DjkJ9q9Ign-RBsGt-/exec';
 
-    const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "บ่อบำบัด", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
+    const locations = ["OPD", "ER", "IPD", "ตึกพุทธรักษา", "ซัพพลาย", "แฟลตพยาบาล", "ห้องน้ำ", "ลีลาวดี", "ประปา", "คลังยา", "พวงชมพู", "เคียงคีรี", "คลังวัสดุการแพทย์", "โรงจอดรถพขร.", "อาคารแพทย์แผนไทย", "อาคารทันตกรรม", "อาคารปฐมภูมิ", "ลาดจอดรถยนต์", "ลาดจอดรถจักรยานยนต์", "ร้านค้าหน้ารพ.", "อื่นๆ"];
     const grid = document.getElementById('locationGrid');
     const otherGroup = document.getElementById('otherLocationGroup');
     const otherInput = document.getElementById('otherLocationInput');
@@ -179,7 +196,6 @@
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('inputDate').value = today;
 
-    // --- ระบบซ่อน/แสดง รายละเอียดเหตุการณ์ ---
     const eventStatus = document.getElementById('eventStatus');
     const detailGroup = document.getElementById('detailGroup');
     const incidentDetailInput = document.getElementById('incidentDetailInput');
@@ -192,10 +208,9 @@
         } else {
             detailGroup.style.display = 'none';
             incidentDetailInput.required = false;
-            incidentDetailInput.value = 'ไม่มีเหตุการณ์ผิดปกติ'; // พิมพ์อัตโนมัติให้ส่งไปที่ฐานข้อมูล
+            incidentDetailInput.value = 'ไม่มีเหตุการณ์ผิดปกติ'; 
         }
     });
-    // เรียกให้ทำงานครั้งแรกตอนโหลดหน้าเว็บ
     eventStatus.dispatchEvent(new Event('change'));
 
     function showTab(type) {
@@ -214,7 +229,7 @@
         } else { alert("รหัสผ่านไม่ถูกต้อง!"); }
     }
 
-    // --- ระบบย่อรูปภาพ ---
+    // ระบบย่อรูปภาพ
     document.getElementById('imageInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -224,33 +239,28 @@
             img.onload = function() {
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 800; 
-                const MAX_HEIGHT = 800;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height && width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width; width = MAX_WIDTH;
-                } else if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height; height = MAX_HEIGHT;
-                }
-                canvas.width = width;
-                canvas.height = height;
+                const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                let width = img.width; let height = img.height;
+                if (width > height && width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } 
+                else if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                canvas.width = width; canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-                
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
                 document.getElementById('imageBase64').value = dataUrl;
-                
                 const preview = document.getElementById('preview');
-                preview.src = dataUrl;
-                preview.style.display = 'block';
+                preview.src = dataUrl; preview.style.display = 'block';
             }
             img.src = event.target.result;
         }
         reader.readAsDataURL(file);
     });
 
-    let globalData = {}; 
+    // ตัวแปรส่วนกลางสำหรับระบบ Report
+    let globalGroupedDictionary = {}; // เก็บข้อมูลจริงอ้างอิงตอน Print
+    let allReportGroups = []; // เก็บ Array สำหรับเรียงและค้นหา
+    let currentPage = 1;
+    const itemsPerPage = 5; // โชว์หน้าละ 5 รายการ
+
     function fetchAllData() {
         document.getElementById('dashDateShow').innerText = "กำลังคำนวณ...";
         document.getElementById('reportDisplay').innerHTML = "กำลังประมวลผลข้อมูล...";
@@ -272,7 +282,7 @@
                     else if(shift === "เวรบ่าย") cAft++;
                     else if(shift === "เวรดึก") cNight++;
                 }
-                if(!grouped[key]) grouped[key] = { date: date, shift: shift, events: [], isAck: false, supName: "", supAction: "" };
+                if(!grouped[key]) grouped[key] = { key: key, date: date, shift: shift, events: [], isAck: false, supName: "", supAction: "" };
                 grouped[key].events.push(row);
             });
 
@@ -286,76 +296,220 @@
                 }
             });
 
+            // อัปเดต Dashboard
             document.getElementById('dashTotal').innerText = cTotal;
             document.getElementById('dashMorn').innerText = cMorn;
             document.getElementById('dashAft').innerText = cAft;
             document.getElementById('dashNight').innerText = cNight;
             document.getElementById('dashDateShow').innerText = "ข้อมูลประจำวันที่: " + today;
 
-            renderUI(grouped);
+            globalGroupedDictionary = grouped;
+            allReportGroups = Object.values(grouped).sort((a,b) => b.date.localeCompare(a.date));
+            
+            currentPage = 1; // รีเซ็ตหน้ากลับไปที่ 1 เสมอเวลาดึงข้อมูลใหม่
+            renderReportUI(); // สร้างหน้ารายงาน
+            renderSupUI();    // สร้างหน้าหัวหน้า
         }).catch(err => { console.error(err); alert("ดึงข้อมูลล้มเหลว โปรดตรวจสอบเน็ตหรือการ Deploy"); });
     }
 
-    function renderUI(grouped) {
-        let reportHTML = ""; let supHTML = "";
-        let groupsArray = Object.values(grouped).sort((a,b) => b.date.localeCompare(a.date));
+    // ฟังก์ชันค้นหา
+    function handleSearch() {
+        currentPage = 1;
+        renderReportUI();
+    }
 
-        groupsArray.forEach(group => {
+    // สร้างหน้าตารายงาน (มี Search, Pagination, Collapse)
+    function renderReportUI() {
+        let searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        // 1. กรองข้อมูล (Search)
+        let filteredGroups = allReportGroups.filter(g => {
+            let text = `${g.date} ${g.shift} ${g.supName} ${g.supAction}`.toLowerCase();
+            g.events.forEach(ev => { text += ` ${ev[4]} ${ev[5]} ${ev[6]} ${ev[7]} ${ev[8]}`.toLowerCase(); });
+            return text.includes(searchTerm);
+        });
+
+        // 2. คำนวณแบ่งหน้า (Pagination)
+        let totalItems = filteredGroups.length;
+        let totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if(currentPage > totalPages) currentPage = totalPages;
+        
+        let startIndex = (currentPage - 1) * itemsPerPage;
+        let endIndex = startIndex + itemsPerPage;
+        let paginatedGroups = filteredGroups.slice(startIndex, endIndex);
+
+        // 3. สร้าง HTML
+        let reportHTML = "";
+        paginatedGroups.forEach((group, index) => {
             let eventsList = "";
             group.events.forEach(ev => {
                 let loc = ev[6] ? `${ev[5]} (${ev[6]})` : ev[5];
                 let statusBadge = ev[7] === 'ปกติ' ? '<span style="color:green;">🟢 ปกติ</span>' : '<span style="color:red;">🔴 มีเหตุการณ์</span>';
-                let imgLink = (ev[9] && ev[9].includes("http")) ? `<br>📸 <a href="${ev[9]}" target="_blank" style="color:#007bff; text-decoration:underline;">ดูรูปภาพประกอบ</a>` : '';
-                
-                // ถ้ารายละเอียดเป็น "ไม่มีเหตุการณ์ผิดปกติ" เราสามารถข้ามบรรทัดนี้ได้เพื่อความสะอาดตาของรายงาน
+                let imgLink = (ev[9] && ev[9].includes("http")) ? `<br>📸 <a href="${ev[9]}" target="_blank" style="color:#007bff;">ดูรูปภาพประกอบ</a>` : '';
                 let detailText = (ev[8] === 'ไม่มีเหตุการณ์ผิดปกติ') ? '' : `<br>📝 รายละเอียด: ${ev[8]}`;
 
                 eventsList += `<div class="event-item">
                     <b>เวลา ${ev[2]} น.</b> (บันทึกโดย: ${ev[4]})<br>
                     📍 สถานที่: ${loc}<br>
                     ⚠️ สถานะ: <b>${statusBadge}</b>
-                    ${detailText}
-                    ${imgLink}
+                    ${detailText} ${imgLink}
                 </div>`;
             });
 
-            let statusBadge = group.isAck ? `✅ หัวหน้ารับทราบแล้ว` : `⏳ รอหัวหน้ารับทราบ`;
+            let statusBadge = group.isAck ? `✅ รับทราบแล้ว` : `⏳ รอหัวหน้า`;
             let headerClass = group.isAck ? "group-header acked" : "group-header";
             
+            // เปิดหน้าแรกสุดของข้อมูลให้กางออกอัตโนมัติ อันอื่นให้พับไว้
+            let isExpanded = (index === 0 && searchTerm === "") ? "block" : "none";
+            let toggleIcon = (index === 0 && searchTerm === "") ? "▼" : "▶";
+
             reportHTML += `<div class="group-card">
-                <div class="${headerClass}">
-                    <span>📅 ${group.date} | ${group.shift}</span>
+                <div class="${headerClass}" onclick="toggleContent('content_${group.key}', this)">
+                    <span>${toggleIcon} 📅 ${group.date} | ${group.shift}</span>
                     <span>${statusBadge}</span>
                 </div>
-                <div><b>สรุปเหตุการณ์ทั้งหมดในเวร: ${group.events.length} รายการ</b></div><hr>
-                ${eventsList}
-                ${group.isAck ? `<div class="sup-status"><b>หัวหน้าสั่งการ (${group.supName}):</b> ${group.supAction}</div>` : ''}
-            </div>`;
-
-            if(!group.isAck) {
-                supHTML += `<div class="group-card">
-                    <div class="group-header">
-                        <span>📅 ${group.date} | ${group.shift}</span>
-                        <span>รายการ: ${group.events.length}</span>
-                    </div>
+                <div id="content_${group.key}" class="group-content" style="display: ${isExpanded};">
+                    <div>
+                        <b>สรุปเหตุการณ์ทั้งหมดในเวร: ${group.events.length} รายการ</b>
+                        <button class="btn-print" onclick="printReport('${group.key}')">🖨️ พิมพ์รายงาน</button>
+                        <div style="clear:both;"></div>
+                    </div><hr>
                     ${eventsList}
-                    <div class="sup-form-box">
-                        <form onsubmit="submitSupForm(event)">
-                            <input type="hidden" name="action" value="supervisorAction">
-                            <input type="hidden" name="summaryDate" value="${group.date}">
-                            <input type="hidden" name="shiftRef" value="${group.shift}">
-                            <label>ผู้รับทราบ:</label>
-                            <input type="text" name="supName" value="นางสาวขรินข์ทิพย์ ศรีนิล" readonly style="margin-bottom:8px; background:#e9ecef; cursor:not-allowed;">
-                            <textarea name="supAction" rows="2" placeholder="วิธีแก้ไขปัญหา หรือ รับทราบ" required></textarea>
-                            <button type="submit" class="btn-submit" style="background:#007bff; margin-top:8px;">✅ ยืนยันรับทราบเวรนี้</button>
-                        </form>
+                    ${group.isAck ? `<div class="sup-status"><b>หัวหน้าสั่งการ (${group.supName}):</b> ${group.supAction}</div>` : ''}
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('reportDisplay').innerHTML = reportHTML || "<p style='text-align:center;'>ไม่พบข้อมูลที่ค้นหา</p>";
+
+        // 4. สร้างปุ่มเปลี่ยนหน้า
+        let paginationHTML = "";
+        for(let i=1; i<=totalPages; i++) {
+            let activeClass = (i === currentPage) ? "active" : "";
+            paginationHTML += `<button class="page-btn ${activeClass}" onclick="changePage(${i})">${i}</button>`;
+        }
+        document.getElementById('paginationControls').innerHTML = paginationHTML;
+    }
+
+    // ฟังก์ชันเปลี่ยนหน้า
+    function changePage(page) {
+        currentPage = page;
+        renderReportUI();
+        document.getElementById('reportSection').scrollIntoView({behavior: "smooth"});
+    }
+
+    // ฟังก์ชัน ยุบ/ขยาย ข้อมูล
+    function toggleContent(contentId, headerEl) {
+        let content = document.getElementById(contentId);
+        let iconSpan = headerEl.querySelector('span');
+        if (content.style.display === "none") {
+            content.style.display = "block";
+            iconSpan.innerHTML = iconSpan.innerHTML.replace("▶", "▼");
+        } else {
+            content.style.display = "none";
+            iconSpan.innerHTML = iconSpan.innerHTML.replace("▼", "▶");
+        }
+    }
+
+    // ฟังก์ชันพิมพ์รายงาน (Print Format สวยงาม)
+    function printReport(key) {
+        const group = globalGroupedDictionary[key];
+        if(!group) return;
+
+        let eventsHtml = "";
+        group.events.forEach((ev, idx) => {
+            let loc = ev[6] ? `${ev[5]} (${ev[6]})` : ev[5];
+            eventsHtml += `
+                <tr>
+                    <td style="padding:10px; border:1px solid #000; text-align:center;">${idx+1}</td>
+                    <td style="padding:10px; border:1px solid #000; text-align:center;">${ev[2]}</td>
+                    <td style="padding:10px; border:1px solid #000;">${ev[4]}</td>
+                    <td style="padding:10px; border:1px solid #000;">${loc}</td>
+                    <td style="padding:10px; border:1px solid #000;">${ev[7]}</td>
+                    <td style="padding:10px; border:1px solid #000;">${ev[8]}</td>
+                </tr>
+            `;
+        });
+
+        let printWin = window.open('', '', 'width=900,height=600');
+        printWin.document.write(`
+        <html>
+        <head>
+            <title>รายงานเวร รปภ. ${group.date}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Sarabun', sans-serif; padding: 40px; color: #000; }
+                h2 { text-align: center; margin-bottom: 5px;}
+                h3 { text-align: center; font-weight: normal; margin-top: 0; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+                th { background-color: #f0f0f0; padding: 10px; border: 1px solid #000; }
+                .footer { margin-top: 40px; }
+                .sign-box { float: right; text-align: center; margin-top: 30px; width: 300px; }
+            </style>
+        </head>
+        <body>
+            <h2>รายงานประจำวัน เจ้าหน้าที่รักษาความปลอดภัย</h2>
+            <h3>โรงพยาบาลไทรโยค</h3>
+            <p><b>ประจำวันที่:</b> ${group.date} &nbsp;&nbsp;&nbsp;&nbsp; <b>กะเวลา:</b> ${group.shift}</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th width="5%">ลำดับ</th><th width="10%">เวลา</th>
+                        <th width="20%">ชื่อผู้บันทึก</th><th width="20%">สถานที่ตรวจ</th>
+                        <th width="15%">สถานะ</th><th width="30%">รายละเอียดเหตุการณ์</th>
+                    </tr>
+                </thead>
+                <tbody>${eventsHtml}</tbody>
+            </table>
+            
+            <div class="footer">
+                <p><b>ความเห็นหัวหน้างาน / ข้อสั่งการ:</b> ${group.isAck ? group.supAction : '......................................................................'}</p>
+                <div class="sign-box">
+                    <p>ลงชื่อ..........................................................</p>
+                    <p>(${group.isAck ? group.supName : 'นางสาวขรินข์ทิพย์ ศรีนิล'})</p>
+                    <p>หัวหน้างาน</p>
+                </div>
+            </div>
+            <script>window.onload = function() { setTimeout(function(){ window.print(); }, 500); }<\/script>
+        </body>
+        </html>
+        `);
+        printWin.document.close();
+    }
+
+    // สร้างหน้าหัวหน้างาน (โชว์เฉพาะที่รอการรับทราบ)
+    function renderSupUI() {
+        let supHTML = "";
+        allReportGroups.forEach(group => {
+            if(!group.isAck) {
+                let eventsList = "";
+                group.events.forEach(ev => {
+                    let loc = ev[6] ? `${ev[5]} (${ev[6]})` : ev[5];
+                    let imgLink = (ev[9] && ev[9].includes("http")) ? `📸 <a href="${ev[9]}" target="_blank">ดูรูป</a>` : '';
+                    eventsList += `<div class="event-item"><b>${ev[2]} น.</b> | 📍 ${loc} | ⚠️ ${ev[7]} ${imgLink}</div>`;
+                });
+
+                supHTML += `<div class="group-card">
+                    <div class="group-header"><span>📅 ${group.date} | ${group.shift}</span><span>รายการ: ${group.events.length}</span></div>
+                    <div style="padding: 15px;">
+                        ${eventsList}
+                        <div class="sup-form-box">
+                            <form onsubmit="submitSupForm(event)">
+                                <input type="hidden" name="action" value="supervisorAction">
+                                <input type="hidden" name="summaryDate" value="${group.date}">
+                                <input type="hidden" name="shiftRef" value="${group.shift}">
+                                <label>ผู้รับทราบ:</label>
+                                <input type="text" name="supName" value="นางสาวขรินข์ทิพย์ ศรีนิล" readonly style="margin-bottom:8px; background:#e9ecef;">
+                                <textarea name="supAction" rows="2" placeholder="วิธีแก้ไขปัญหา หรือ รับทราบ" required></textarea>
+                                <button type="submit" class="btn-submit" style="background:#007bff; margin-top:8px;">✅ ยืนยันรับทราบ</button>
+                            </form>
+                        </div>
                     </div>
                 </div>`;
             }
         });
-
-        document.getElementById('reportDisplay').innerHTML = reportHTML || "<p>ยังไม่มีข้อมูลบันทึก</p>";
-        document.getElementById('supDisplay').innerHTML = supHTML || "<h4 style='color:green;'>🎉 ไม่มีเวรค้างรับทราบ!</h4>";
+        document.getElementById('supDisplay').innerHTML = supHTML || "<h4 style='text-align:center; color:green;'>🎉 ไม่มีเวรค้างรับทราบ!</h4>";
     }
 
     function submitSupForm(e) {
@@ -365,7 +519,7 @@
 
         fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
         .then(() => { alert('บันทึกรับทราบเวรสำเร็จ!'); fetchAllData(); })
-        .catch(() => { alert("เกิดข้อผิดพลาด"); btn.innerText = "✅ ยืนยันรับทราบเวรนี้"; btn.disabled = false; });
+        .catch(() => { alert("เกิดข้อผิดพลาด"); btn.innerText = "✅ ยืนยันรับทราบ"; btn.disabled = false; });
     }
 
     document.getElementById('incidentForm').addEventListener('submit', e => {
@@ -377,16 +531,14 @@
         document.getElementById('saveBtn').innerText = "กำลังบันทึกและส่งแจ้งเตือน Telegram...";
         fetch(scriptURL, { method: 'POST', body: new FormData(e.target), mode: 'no-cors'})
         .then(() => { 
-            alert('บันทึกเหตุการณ์และส่งแจ้งเตือนสำเร็จ!'); 
+            alert('บันทึกเหตุการณ์สำเร็จ!'); 
             e.target.reset(); 
             document.getElementById('inputDate').value = today;
             document.getElementById('saveBtn').innerText = "💾 บันทึกข้อมูล";
             document.getElementById('otherLocationGroup').style.display = 'none';
             document.getElementById('imageBase64').value = "";
             document.getElementById('preview').style.display = "none";
-            document.getElementById('preview').src = "";
             
-            // รีเซ็ตสถานะเหตุการณ์กลับไปเป็น "ปกติ"
             eventStatus.value = 'ปกติ';
             eventStatus.dispatchEvent(new Event('change'));
         });
